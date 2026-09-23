@@ -80,16 +80,15 @@ class LogProcessor(DataProcessor):
     def ingest(self, data: typing.Any) -> None:
         if self.validate(data) == False:
             raise ValueError("Non valid data for LogProcessor")
-        if isinstance(data, list):
-            for log in data:
-                self.rank += 1
-                formatted_log: str = f"{log.get('log_level', '')}: {log.get('log_message', '')}"
-                self.queue.append((self.rank, str(log)))
+        if isinstance(data, dict):
+            items_to_process: list[dict[str, str]] = [data]
         else:
-            self.rank += 1
-            formatted_log: str = f"{data.get('log_level', '')}: {data.get('log_message', '')}"
-            self.queue.append((self.rank, str(data)))
+            items_to_process = data
 
+        for log in items_to_process:
+            self.rank += 1
+            formatted_log: str = f"{log.get('log_level', '')}: {log.get('log_message', '')}"
+            self.queue.append((self.rank, formatted_log))
 
 if __name__ == "__main__":
     print("=== Code Nexus - Data Processor ===\n")
