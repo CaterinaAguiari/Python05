@@ -83,9 +83,11 @@ class LogProcessor(DataProcessor):
         if isinstance(data, list):
             for log in data:
                 self.rank += 1
+                formatted_log: str = f"{log.get('log_level', '')}: {log.get('log_message', '')}"
                 self.queue.append((self.rank, str(log)))
         else:
             self.rank += 1
+            formatted_log: str = f"{data.get('log_level', '')}: {data.get('log_message', '')}"
             self.queue.append((self.rank, str(data)))
 
 
