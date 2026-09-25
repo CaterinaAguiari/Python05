@@ -1,6 +1,7 @@
 import abc
 import typing
 
+
 class ExportPlugin(typing.Protocol):
     def process_output(self, data: list[tuple[int, str]]) -> None:
         ...
@@ -10,7 +11,7 @@ class CSVExportPlugin:
     def process_output(self, data: list[tuple[int, str]]) -> None:
         print("CSV Output:")
         values: list[str] = []
-        
+
         for item_id, item_val in data:
             values.append(item_val)
 
@@ -21,7 +22,7 @@ class JSONExportPlugin:
     def process_output(self, data: list[tuple[int, str]]) -> None:
         print("JSON Output:")
         json_entries: list[str] = []
-        
+
         for item_id, item_val in data:
             entry: str = f'"item_{item_id}": "{item_val}"'
             json_entries.append(entry)
@@ -44,12 +45,9 @@ class DataProcessor(abc.ABC):
         pass
 
     def output(self, nb: int) -> tuple[int, str]:
-        extracted: list[tuple[int, str]] = []
-        for _ in range(nb):
-            if not self.queue:
-                break
-            extracted.append(self.queue.pop(0))
-        return extracted
+        if not self.queue:
+            raise IndexError("pop from empty queue")
+        return self.queue.pop(0)
 
 
 class NumericProcessor(DataProcessor):
@@ -64,7 +62,7 @@ class NumericProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for NumericProcessor")
         if isinstance(data, list):
             for number in data:
@@ -87,7 +85,7 @@ class TextProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for TextProcessor")
         if isinstance(data, list):
             for letter in data:
@@ -108,18 +106,16 @@ class LogProcessor(DataProcessor):
                     return False
             return True
         return False
-        
+
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for LogProcessor")
-        if isinstance(data, list):
-            for log in data:
-                self.rank += 1
-                formatted_log: str = f"{log.get('log_level', '')}: {log.get('log_message', '')}"
-                self.queue.append((self.rank, formatted_log))
-        else:
+        items = data if isinstance(data, list) else [data]
+        for log in items:
             self.rank += 1
-            formatted_log: str = f"{log.get('log_level', '')}: {log.get('log_message', '')}"
+            formatted_log: str = (f"{log.get('log_level', '')}: "
+                                  f"{log.get('log_message', '')}"
+                                  )
             self.queue.append((self.rank, formatted_log))
 
 
@@ -134,22 +130,24 @@ class DataStream:
         for item in stream:
             handled: bool = False
             for proc in self.processors:
-                if proc.validate(item) == True:
+                if proc.validate(item) is True:
                     proc.ingest(item)
                     handled = True
                     break
-            if handled == False:
-                print(f"DataStream error - Can't process element in stream: {item}")
+            if handled is False:
+                print("DataStream error - Can't process "
+                      f"element in stream: {item}"
+                      )
 
     def print_processors_stats(self) -> None:
         print("\n== DataStream statistics ==")
-        if self.processors == False:
+        if self.processors is False:
             print("No processor found, no data")
             return
-            
+
         for proc in self.processors:
             name: str = proc.__class__.__name__
-            
+
             if name == "NumericProcessor":
                 label: str = "Numeric Processor"
             elif name == "TextProcessor":
@@ -158,15 +156,22 @@ class DataStream:
                 label = "Log Processor"
             else:
                 label = name
-                
+
             total_processed: int = proc.rank
             items_in_queue: int = len(proc.queue)
-            
-            print(f"{label} total {total_processed} items processed, remaining {items_in_queue} on processor")
+
+            print(f"{label} total {total_processed} items processed, "
+                  f"remaining {items_in_queue} on processor"
+                  )
 
     def output_pipeline(self, nb: int, plugin: ExportPlugin) -> None:
         for proc in self.processors:
-            extracted_data: list[tuple[int, str]] = proc.output(nb)
+            extracted_data: list[tuple[int, str]] = []
+            for _ in range(nb):
+                if proc.queue is False:
+                    break
+                extracted_data.append(proc.output(nb))
+
             if extracted_data:
                 plugin.process_output(extracted_data)
 
@@ -190,8 +195,12 @@ if __name__ == "__main__":
         "Hello world",
         [3.14, -1, 2.71],
         [
-            {'log_level': 'WARNING', 'log_message': 'Telnet access! Use ssh instead'},
-            {'log_level': 'INFO', 'log_message': 'User wil is connected'}
+            {'log_level': 'WARNING',
+             'log_message': 'Telnet access! Use ssh instead'
+             },
+            {'log_level': 'INFO',
+             'log_message': 'User wil is connected'
+             }
         ],
         42,
         ['Hi', 'five']
@@ -211,8 +220,12 @@ if __name__ == "__main__":
         21,
         ['I love AI', 'LLMs are wonderful', 'Stay healthy'],
         [
-            {'log_level': 'ERROR', 'log_message': '500 server crash'},
-            {'log_level': 'NOTICE', 'log_message': 'Certificate expires in 10 days'}
+            {'log_level': 'ERROR',
+             'log_message': '500 server crash'
+             },
+            {'log_level': 'NOTICE',
+             'log_message': 'Certificate expires in 10 days'
+             }
         ],
         [32, 42, 64, 84, 128, 168],
         'World hello'
