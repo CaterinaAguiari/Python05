@@ -1,6 +1,7 @@
 import abc
 import typing
 
+
 class DataProcessor(abc.ABC):
     def __init__(self) -> None:
         self.queue: list[tuple[int, str]] = []
@@ -20,6 +21,7 @@ class DataProcessor(abc.ABC):
 
         return self.queue.pop(0)
 
+
 class NumericProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
         if type(data) in (int, float):
@@ -32,7 +34,7 @@ class NumericProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for NumericProcessor")
         if isinstance(data, list):
             for number in data:
@@ -55,7 +57,7 @@ class TextProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for TextProcessor")
         if isinstance(data, list):
             for letter in data:
@@ -78,7 +80,7 @@ class LogProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for LogProcessor")
         if isinstance(data, dict):
             items_to_process: list[dict[str, str]] = [data]
@@ -87,18 +89,25 @@ class LogProcessor(DataProcessor):
 
         for log in items_to_process:
             self.rank += 1
-            formatted_log: str = f"{log.get('log_level', '')}: {log.get('log_message', '')}"
+            formatted_log: str = (f"{log.get('log_level', '')}: "
+                                  f"{log.get('log_message', '')}"
+                                  )
             self.queue.append((self.rank, formatted_log))
+
 
 if __name__ == "__main__":
     print("=== Code Nexus - Data Processor ===\n")
     print("Testing Numeric Processor...")
     num_p: NumericProcessor = NumericProcessor()
-    
+
     valid_int: int = 42
     valid_str: str = "Hello"
-    print(f" Trying to validate input '{valid_int}': {num_p.validate(valid_int)}")
-    print(f" Trying to validate input '{valid_str}': {num_p.validate(valid_str)}")
+    print(f" Trying to validate input '{valid_int}': "
+          f"{num_p.validate(valid_int)}"
+          )
+    print(f" Trying to validate input '{valid_str}': "
+          f"{num_p.validate(valid_str)}"
+          )
 
     print(" Test invalid ingestion of string 'foo' without prior validation:")
     try:
@@ -116,7 +125,9 @@ if __name__ == "__main__":
 
     print("\nTesting Text Processor...")
     text_p: TextProcessor = TextProcessor()
-    print(f" Trying to validate input '{valid_int}': {text_p.validate(valid_int)}")
+    print(f" Trying to validate input '{valid_int}': "
+          f"{text_p.validate(valid_int)}"
+          )
     text_data: list[str] = ["Hello", "Nexus", "World"]
     print(f" Processing data: {text_data}")
     text_p.ingest(text_data)
@@ -126,7 +137,9 @@ if __name__ == "__main__":
 
     print("\nTesting Log Processor...")
     log_p: LogProcessor = LogProcessor()
-    print(f" Trying to validate input '{valid_str}': {log_p.validate(valid_str)}")
+    print(f" Trying to validate input '{valid_str}': "
+          f"{log_p.validate(valid_str)}"
+          )
     log_data: list[dict[str, str]] = [
         {"log_level": "NOTICE", "log_message": "Connection to server"},
         {"log_level": "ERROR", "log_message": "Unauthorized access!!"},
