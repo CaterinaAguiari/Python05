@@ -1,6 +1,7 @@
 import abc
 import typing
 
+
 class DataProcessor(abc.ABC):
     def __init__(self) -> None:
         self.queue: list[tuple[int, str]] = []
@@ -20,6 +21,7 @@ class DataProcessor(abc.ABC):
 
         return self.queue.pop(0)
 
+
 class NumericProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
         if type(data) in (int, float):
@@ -32,7 +34,7 @@ class NumericProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for NumericProcessor")
         if isinstance(data, list):
             for number in data:
@@ -55,7 +57,7 @@ class TextProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for TextProcessor")
         if isinstance(data, list):
             for letter in data:
@@ -78,7 +80,7 @@ class LogProcessor(DataProcessor):
         return False
 
     def ingest(self, data: typing.Any) -> None:
-        if self.validate(data) == False:
+        if self.validate(data) is False:
             raise ValueError("Non valid data for LogProcessor")
         if isinstance(data, list):
             for log in data:
@@ -100,22 +102,24 @@ class DataStream:
         for item in stream:
             handled: bool = False
             for proc in self.processors:
-                if proc.validate(item) == True:
+                if proc.validate(item) is True:
                     proc.ingest(item)
                     handled = True
                     break
-            if handled == False:
-                print(f"DataStream error - Can't process element in stream: {item}")
+            if handled is False:
+                print("DataStream error - "
+                      f"Can't process element in stream: {item}"
+                      )
 
     def print_processors_stats(self) -> None:
         print("== DataStream statistics ==")
-        if self.processors == False:
+        if self.processors is False:
             print("No processor found, no data")
             return
-            
+
         for proc in self.processors:
             name: str = proc.__class__.__name__
-            
+
             if name == "NumericProcessor":
                 label: str = "Numeric Processor"
             elif name == "TextProcessor":
@@ -124,11 +128,13 @@ class DataStream:
                 label = "Log Processor"
             else:
                 label = name
-                
+
             total_processed: int = proc.rank
             items_in_queue: int = len(proc.queue)
-            
-            print(f"{label} total {total_processed} items processed, remaining {items_in_queue} on processor")
+
+            print(f"{label} total {total_processed} items processed, "
+                  f"remaining {items_in_queue} on processor"
+                  )
 
 
 if __name__ == "__main__":
@@ -147,8 +153,12 @@ if __name__ == "__main__":
     batch: list[typing.Any] = [
         "Hello world",
         [3.14, -1, 2.71],
-        [{'log_level': 'WARNING', 'log_message': 'Telnet access! Use ssh instead'},
-         {'log_level': 'INFO', 'log_message': 'User wil is connected'}],
+        [{'log_level': 'WARNING',
+          'log_message': 'Telnet access! Use ssh instead'
+          },
+         {'log_level': 'INFO',
+         'log_message': 'User wil is connected'
+          }],
         42,
         ['Hi', 'five']
     ]
@@ -157,7 +167,7 @@ if __name__ == "__main__":
     ds.process_stream(batch)
     ds.print_processors_stats()
 
-    print(f"\nRegistering other data processors")
+    print("\nRegistering other data processors")
     ds.register_processor(text_p)
     ds.register_processor(log_p)
 
@@ -165,7 +175,9 @@ if __name__ == "__main__":
     ds.process_stream(batch)
     ds.print_processors_stats()
 
-    print("\nConsume some elements from the data processors: Numeric 3, Text 2, Log 1")
+    print("\nConsume some elements from the data"
+          " processors: Numeric 3, Text 2, Log 1"
+          )
     for _ in range(3):
         num_p.output()
     for _ in range(2):
